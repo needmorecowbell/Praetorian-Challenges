@@ -45,6 +45,12 @@ class Rota(object):
             exit()
         except KeyError as e:
             pass
+    
+    def dump_stats(self):
+        return {"computer_wins":self.computer_wins,
+                "player_wins":self.player_wins,
+                "moves":self.moves,
+                "games_won":self.games_won}
 
     def display_board_minimal(self):
         """Displays the rota board as a 3x3 grid, with stats at the bottom."""
@@ -80,11 +86,11 @@ Player Wins:    {self.player_wins}
  *##                                             ##*
   *##                                           ##*
    *##                                         ##*
-    *##  {s[6]}                                 {s[7]}  ##*
+    *##  {s[6]}                                 {s[8]}  ##*
       *## 7                              9  ##*
         *#                                ##*
            *##            8            ##*
-               *##        {s[8]}        ##*
+               *##        {s[7]}        ##*
                    *** ### ### ***
 
 Games Won/Lost: {self.games_won}/{self.computer_wins}
