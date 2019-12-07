@@ -1,5 +1,7 @@
 from .api import RotaAPI
+
 from pprint import pprint
+
 
 class Rota(object):
     api = None
@@ -11,33 +13,33 @@ class Rota(object):
     computer_wins = 0
     games_won = 0
 
-    is_active = False # timeout checker
+    is_active = False  # timeout checker
+    verbose = False
 
+    hash = ""  # the good stuff
 
-    hash = "" # the good stuff
-
-    def __init__(self, email):
-        self.api= RotaAPI(email)
+    def __init__(self, email, verbose=False):
+        self.api = RotaAPI(email)
         self.refresh_stats()
-        
+        self.verbose = verbose
+
     def refresh_stats(self):
         status = self.api.status()['data']
-        
-        self.computer_wins= status['computer_wins']
-        self.player_wins= status['player_wins']
-        self.moves = status['moves']
-        self.games_won= status['games_won']
-        self.state= status['board']
-        
 
-        #Handle game-ending cases, such as a loss or a hash
-        if(self.computer_wins>0):
+        self.computer_wins = status['computer_wins']
+        self.player_wins = status['player_wins']
+        self.moves = status['moves']
+        self.games_won = status['games_won']
+        self.state = status['board']
+
+        # Handle game-ending cases, such as a loss or a hash
+        if(self.computer_wins > 0):
             print("GAME LOST :(")
-            self.is_active=False
+            self.is_active = False
         try:
             self.hash = status['hash']
             print("WE GOT A HASH!!!!")
-            with open("HASHITY.HASH","w") as f:
+            with open("HASHITY.HASH", "w") as f:
                 f.write(self.hash)
             print("Hash written to HASHITY.HASH in current directory")
             exit()
@@ -47,7 +49,7 @@ class Rota(object):
     def display_board_minimal(self):
         """Displays the rota board as a 3x3 grid, with stats at the bottom."""
 
-        s= self.state
+        s = self.state
         return f'''
         {s[0]}{s[1]}{s[2]}
         {s[3]}{s[4]}{s[5]}
@@ -57,11 +59,11 @@ Games Won/Lost: {self.games_won}/{self.computer_wins}
 Moves:          {self.moves}
 Player Wins:    {self.player_wins}  
         '''
-    
+
     def display_board(self):
         """Displays the rota board in ascii art, with the stats at the bottom."""
 
-        s= self.state
+        s = self.state
         return f'''
                    *** ### ### ***
                *##        {s[1]}        ##* 
@@ -91,7 +93,6 @@ Player Wins:    {self.player_wins}
 
     '''
 
-
     def place(self, loc):
         """Make place requests to the api accessible from the board class"""
 
@@ -104,6 +105,6 @@ Player Wins:    {self.player_wins}
         """Make move requests to the api accessible from the board class"""
 
         try:
-            return self.api.move(piece,loc)
+            return self.api.move(piece, loc)
         except Exception as e:
             print(e)

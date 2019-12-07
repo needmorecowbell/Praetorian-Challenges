@@ -1,33 +1,34 @@
 import requests
 
+
 class RotaAPI(object):
     server = 'https://rota.praetorian.com/rota/service/play.php'
-    session= None
+    session = None
 
-    def __init__(self,email):
-        self.session = requests.Session() # start a session to preserve cookies
-        self.reset(email) # start a new game
+    def __init__(self, email):
+        self.session = requests.Session()  # start a session to preserve cookies
+        self.reset(email)  # start a new game
 
     def _request(self, route):
         """ private request function to make calls to rota game url,
             allows for multiple attempts to retrieve a valid response
         """
-        results= None
-        
-        # Keep attempting to make the request until there is an 
+        results = None
+
+        # Keep attempting to make the request until there is an
         # unhandled error, or a valid result
-        while (results is None): 
+        while (results is None):
             try:
 
                 res = self.session.get(self.server + route)
-                
-                if(res.status_code== 200):
+
+                if(res.status_code == 200):
                     results = res.json()
-            
+
             except Exception as e:
-                print("Error: ",str(e))
+                print("Error: ", str(e))
                 return None
-            
+
         return results
 
     def place(self, loc):
@@ -44,4 +45,3 @@ class RotaAPI(object):
 
     def next(self):
         return self._request("?request=next")
-
