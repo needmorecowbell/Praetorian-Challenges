@@ -1,0 +1,2 @@
+class RotaServerException(Exception):
+    pass
