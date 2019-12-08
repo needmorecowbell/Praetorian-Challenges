@@ -13,7 +13,7 @@ class Rota(object):
     computer_wins = 0
     games_won = 0
 
-    is_active = False  # timeout checker
+    is_active = True  # timeout checker
     is_game_lost= False
     verbose = False
 

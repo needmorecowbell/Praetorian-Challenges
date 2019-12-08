@@ -29,7 +29,7 @@ class Player(object):
         for i in range(2):  # reactively handle the next two placements
 
             # Find game ending threat locations
-            threat_locations = self._find_game_ending_threats()
+            threat_locations = self._find_game_ending_threats(self.game.state)
             # There will only ever been one possible threat location this early
             # in the game because of our opening strategy
 
@@ -79,7 +79,6 @@ class Player(object):
                             break
 
 
-
     def _get_opposite_position(self, loc):
         """Return none for 5, the opposite location for the rest"""
         for loc1, loc2 in self.opposites:
@@ -118,14 +117,14 @@ class Player(object):
             if(self.verbose):
                 print(self.game.display_board_minimal())
 
-    def _find_game_ending_threats(self):
+    def _find_game_ending_threats(self,state):
         print("[Player] Finding threats...")
 
         threats = []
 
         # The middle is open, check if there is risk of losing if it is taken
-        if(self.game.state[4] == '-'):
-            if(self._is_threat_in_center()):
+        if(state[4] == '-'):
+            if(self._is_threat_in_center(state)):
                 # IE:
                 #       - - p
                 #       c - c
@@ -134,7 +133,7 @@ class Player(object):
                 threats.append(5)  # threat in center
 
             # if the center is open, there is a chance the border is at risk
-            threats_on_border = self._find_threats_on_border()
+            threats_on_border = self._find_threats_on_border(state)
             # IE:
             #       - - p
             #       - - c
@@ -144,8 +143,8 @@ class Player(object):
                 threats.extend(threats_on_border)
                 print("There is a threat on the edge of the board")
 
-        elif(self.game.state[4] == 'c'):
-            threat_using_center = self._find_threat_using_center()
+        elif(state[4] == 'c'):
+            threat_using_center = self._find_threat_using_center(state)
             if(threat_using_center):
                 threats.append(threat_using_center)
                 # IE:
@@ -156,10 +155,10 @@ class Player(object):
 
         return threats
 
-    def _is_threat_in_center(self):
+    def _is_threat_in_center(self,state):
         """Checks for threat occurring in the center of the board"""
         for loc1, loc2 in self.opposites:
-            if(self.game.state[loc1-1] == 'c' and self.game.state[loc2-1] == 'c'):
+            if(state[loc1-1] == 'c' and state[loc2-1] == 'c'):
                 return True
         return False
 
@@ -180,23 +179,23 @@ class Player(object):
         """Returns True if spot on board is empty"""
         return self.game.state[loc-1] == '-'
 
-    def _find_threat_using_center(self):
+    def _find_threat_using_center(self, state):
         """Checks for threat that uses the center piece"""
 
         # We already know that there is a piece in the center.
         # We need to check if there is another opponent piece on the edge, and
         # if that edge's opposite is empty if it is, the opposite spot is a threat
         for loc1, loc2 in self.opposites:
-            if(self.game.state[loc1-1] == 'c' and self.game.state[loc2-1] == '-'):
+            if(state[loc1-1] == 'c' and state[loc2-1] == '-'):
                 print("\t[!] Threat using center found at: ", loc2)
                 return loc2
-            if(self.game.state[loc1-1] == '-' and self.game.state[loc2-1] == 'c'):
+            if(state[loc1-1] == '-' and state[loc2-1] == 'c'):
                 print("\t[!] Threat using center found at: ", loc1)
                 return loc1
 
         return None
 
-    def _find_threats_on_border(self):
+    def _find_threats_on_border(self, state):
         """Checks for threats that do not use the center, only on the border"""
 
         # We already know that there is not an opponent piece in the center
@@ -208,9 +207,9 @@ class Player(object):
             loc2 = self._get_next_position_clockwise(loc1)
             loc3 = self._get_next_position_clockwise(loc2)
 
-            loc1_piece = self.game.state[loc1-1]
-            loc2_piece = self.game.state[loc2-1]
-            loc3_piece = self.game.state[loc3-1]
+            loc1_piece = state[loc1-1]
+            loc2_piece = state[loc2-1]
+            loc3_piece = state[loc3-1]
 
             group = loc1_piece + loc2_piece + loc3_piece
             # print(group)
@@ -259,23 +258,85 @@ class Player(object):
 
     def _stall_game(self):
         """After all pieces are on the board, stall the game for 30 moves"""
-        pass
+
+        # Remove our piece from the middle if it's there
+
+        print("[Player] All pieces are placed, time to stall...")
+        while(self.game.is_active):
+            threats= self._find_game_ending_threats(self.game.state) 
+            
+            if(len(threats)>0): # if there is an immediate threat to take care of...
+                
+                print("[Player] Possible threats: ", threats)
+                player_moved=False
+
+                for player_loc in self._get_player_locations():
+                    available_spaces= self._find_available_spaces(player_loc)
+
+                    if(threats[0] in available_spaces): # if our player has the option of defending against the threat
+                        future_state = self._mock_move(self.game.state, player_loc, threats[0])
+                        future_threats= self._find_game_ending_threats(future_state)
+
+                        if(len(future_threats)== 0): # this move won't cause us to lose
+                            self._move(player_loc, threats[0])
+                            player_moved=True
+                            print('\t[+] Moved player from center to: ',player_loc)
+
+                            if(self.verbose):
+                                print(self.game.display_board_minimal())
+                            break # we made our move, break out
+                
+                if(not player_moved):
+                    print("Couldn't fix the threat")
+                    break
+
+            elif(self.game.state[4] == 'p'):
+                print("[Player] piece is in center, attempting to move away")
+                available_locs = self._find_available_spaces(5) #find all available locations for a piece in the center
+
+                for loc in available_locs:
+                    if(not self._is_piece_near(loc,'p')): #If spot is not near another player piece.
+                        future_state = self._mock_move(self.game.state, 5, loc)
+                        future_threats= self._find_game_ending_threats(future_state)
+                        
+
+                        if(len(future_threats)==0):
+                            results= self._move(5, loc)
+                            print('\t[+] Moved player from center to: ',loc)
+
+                            if(self.verbose):
+                                print(self.game.display_board_minimal())
+                            break # we made our move, break out
+            else:
+                print("[Player] No threats and piece is not in the center")
+                break
+
+    def _mock_move(self, state, piece, loc):
+        """Returns a game state of a move without sending it to the server"""
+        future_state = state[0:piece-1]+'-'+state[piece:] # sub out piece to empty space
+        future_state = future_state[0:loc-1]+'p'+future_state[loc:]
+        return future_state
 
     def _find_available_spaces(self, piece):
         """Finds the available spaces for a piece"""
         available = []
 
-        cclock_spot = self._get_next_position_clockwise(piece, clockwise=False)
-        clock_spot = self._get_next_position_clockwise(piece)
-        middle = self.game.state[4]
+        if(piece !=5):
+            cclock_spot = self._get_next_position_clockwise(piece, clockwise=False)
+            clock_spot = self._get_next_position_clockwise(piece)
+            middle = self.game.state[4]
 
-        if(self.game.state[cclock_spot-1] == '-'):
-            available.append(cclock_spot)
+            if(self.game.state[cclock_spot-1] == '-'):
+                available.append(cclock_spot)
 
-        if(self.game.state[clock_spot-1] == '-'):
-            available.append(clock_spot)
-        if(middle == '-'):
-            available.append(4)
+            if(self.game.state[clock_spot-1] == '-'):
+                available.append(clock_spot)
+            if(middle == '-'):
+                available.append(4)
+        else:
+            for loc in self.clockwise_list:
+                if(self._is_empty(loc)):
+                    available.append(loc)
 
         return available
 
@@ -284,12 +345,16 @@ class Player(object):
         results = self.game.place(loc)
         self.game.refresh_stats()
         self.move_history.append(results["data"]["board"])
+        if(self.game.is_game_lost):
+            self.game_resolution= self.LOST
 
     def _move(self, piece, loc):
         """Place piece and record history"""
         results = self.game.move(piece, loc)
         self.game.refresh_stats()
         self.move_history.append(results["data"]["board"])
+        if(self.game.is_game_lost):
+            self.game_resolution= self.LOST
 
     def dump_game_stats(self):
         """Dump the information about the current game and history about the player's session"""
