@@ -33,14 +33,21 @@ class Player(object):
             # There will only ever been one possible threat location this early
             # in the game because of our opening strategy
 
+            if(len(threat_locations)> 1):
+                print("[FATAL] We're at the end of the line, jim. I guess this is it.")
             if(len(threat_locations) > 0):
                 print("[Player] Game ending threat found, mitigating...")
                 self._place(threat_locations[0])
+
                 if(self.verbose):
                     print(self.game.display_board_minimal())
+                
+                if(self.game.is_game_lost):
+                    self.game_resolution= self.LOST
+                    
             else:
                 print("No immediate threats found")
-                
+
                 # No immediate threat found, find player's position and move to the opposite side of their piece
                 #print("CPU: ", self._get_computer_locations())
                 #print("player: ", self._get_player_locations())
@@ -120,6 +127,26 @@ class Player(object):
                 return True
         return False
 
+    def _is_teammate_near(self, loc):
+        """Returns True if a specific piece around the border has a similar piece next to it"""
+
+        locPost = self._get_next_position_clockwise(loc)
+        locPrior = self._get_next_position_clockwise(loc, clockwise=False)
+
+        piece = self.game.state[loc-1]
+
+        if(piece == '-'):
+            print("[!] something is wrong, you're looking at an empty space")
+            return False
+        if(piece == self.game.state[locPost-1] or piece == self.game.state[locPrior-1]):
+            return True
+
+        return False
+
+    def _is_empty(self, loc):
+        """Returns True if spot on board is empty"""
+        return self.game.state[loc-1] == '-'
+
     def _find_threat_using_center(self):
         """Checks for threat that uses the center piece"""
 
@@ -138,7 +165,7 @@ class Player(object):
 
     def _find_threats_on_border(self):
         """Checks for threats that do not use the center, only on the border"""
-        
+
         # We already know that there is not an opponent piece in the center
         # We need to check along the border for pairs of opponents.
         # if there is an empty space to the left and/or the right, record it
@@ -148,25 +175,25 @@ class Player(object):
             loc2 = self._get_next_position_clockwise(loc1)
             loc3 = self._get_next_position_clockwise(loc2)
 
-            loc1_piece= self.game.state[loc1-1]
-            loc2_piece= self.game.state[loc2-1]
-            loc3_piece= self.game.state[loc3-1]
+            loc1_piece = self.game.state[loc1-1]
+            loc2_piece = self.game.state[loc2-1]
+            loc3_piece = self.game.state[loc3-1]
 
-            group= loc1_piece + loc2_piece + loc3_piece
-            #print(group)
+            group = loc1_piece + loc2_piece + loc3_piece
+            # print(group)
 
-            if('p' not in group and group.count('c') == 2 ): # can't win when if there's a player piece in the set. 
+            # can't win when if there's a player piece in the set.
+            if('p' not in group and group.count('c') == 2):
                 print("\t[!] Threat on border")
                 loc = group.find('-')
 
-                if(loc ==0):
+                if(loc == 0):
                     threats.append(loc1)
                 elif(loc == 1):
                     threats.append(loc2)
-                elif(loc==2):
+                elif(loc == 2):
                     threats.append(loc3)
 
-                        
         return threats
 
     def _get_player_locations(self):

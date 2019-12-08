@@ -14,6 +14,7 @@ class Rota(object):
     games_won = 0
 
     is_active = False  # timeout checker
+    is_game_lost= False
     verbose = False
 
     hash = ""  # the good stuff
@@ -35,7 +36,8 @@ class Rota(object):
         # Handle game-ending cases, such as a loss or a hash
         if(self.computer_wins > 0):
             print("GAME LOST :(")
-            self.is_active = False
+            self.is_game_lost = True
+            self.is_active= False
         try:
             self.hash = status['hash']
             print("WE GOT A HASH!!!!")
