@@ -1,14 +1,49 @@
 from rota import Rota, Player
 import argparse
 from pprint import pprint
+import json
 
 
-def forced(email, verbose=False):
-    game = Rota(email, verbose)
-    player = Player(game, verbose)  # give the player a game to play
-    player.play()
-    pprint(player.dump_game_stats())
+def forced(email, verbose=False, numTries= 1, dump=False):
+    report= {"runs":[]}
+    loss_count=0
+    win_count= 0
+    in_progress_count=0
+    move_counts=[]
 
+    for x in range(0,numTries):
+        game = Rota(email, verbose)
+        player = Player(game, verbose)  # give the player a game to play
+        player.play()
+        stats= player.dump_game_stats()
+        report["runs"].append(stats)
+    
+    for rep in report["runs"]:
+        if(rep["results"] == "LOST"):
+            loss_count+=1
+        elif(rep["results"] == "WIN"):
+            win_count+=1
+        elif(rep["results"] == "IN_PROGRESS"):
+            in_progress_count+=1
+
+        move_counts.append(rep["stats"]["moves"])
+
+    report["stats"] = {"max_moves": max(move_counts),
+                        "avg_moves": sum(move_counts)/len(move_counts),
+                        "losses": loss_count,
+                        "wins": win_count,
+                        "in_progress_count": in_progress_count}
+    print("Stats: ")
+    print("\tHighest number of Moves: ", max(move_counts))
+    print("\tAverage Move Count: ",str(sum(move_counts)/len(move_counts)))
+    print("\tLoss Count: ",loss_count)
+    print("\tWin Count: ", win_count)
+    print("\tIn Progress Count: ", in_progress_count)
+
+    if(dump):
+        print("Dumping to rota_forced_report.json...")
+        with open("rota_forced_report.json","w") as fp:
+            json.dump(report,fp,indent=4)
 
 def interactive(email, verbose=False):
     game = Rota(email)  # initialize a game connection attached to email
@@ -101,7 +136,7 @@ if __name__ == "__main__":
     if(args.force):
         if(args.verbose):
             print("Attempting win by stalling a Rota opponent to submission 50 times in a row...")
-        forced(args.email, args.verbose)
+        forced(args.email, args.verbose,numTries=30,dump=True)
 
     else:
         if(args.verbose):
