@@ -46,12 +46,48 @@ class Player(object):
                     self.game_resolution= self.LOST
                     
             else:
-                print("No immediate threats found")
+                print("\t[+] No immediate threats found")
+                
+                #Place at the opposite end of one of the opponents
+                cp_locs = self._get_computer_locations()
+                piece_placed = False
 
-                # No immediate threat found, find player's position and move to the opposite side of their piece
-                #print("CPU: ", self._get_computer_locations())
-                #print("player: ", self._get_player_locations())
+                for loc in cp_locs:
 
+                    if(loc!=5):
+                        opp_loc= self._get_opposite_position(loc)
+                        if(self._is_empty(opp_loc) and not self._is_piece_near(loc, piece_type='p')): 
+                            # location is empty and not near a teammate
+                            print("[Player] Placing piece opposite of opponent in loc: ", loc)
+                            results= self._place(opp_loc)
+                            piece_placed=True
+
+                            if(self.verbose):
+                                print(self.game.display_board_minimal())
+
+                            break # if we place an item, restart the logic to detect for new threats
+                
+                if(not piece_placed): # if all opposite places are taken or near a teammate...
+                    for loc in self.clockwise_list:
+                        if(self._is_empty(loc) and not self._is_piece_near(loc,piece_type='p')):
+                            print("[Player] No opposite corners found, placing in open area away from teammates...")
+                            results = self._place(loc)
+
+                            if(self.verbose):
+                                print(self.game.display_board_minimal())
+
+                            break
+
+
+
+    def _get_opposite_position(self, loc):
+        """Return none for 5, the opposite location for the rest"""
+        for loc1, loc2 in self.opposites:
+            if(loc1 == loc):
+                return loc2
+            elif(loc2==loc):
+                return loc1
+        
     def _opening_move(self):
         """Place the player's first piece on the board"""
 
@@ -127,18 +163,15 @@ class Player(object):
                 return True
         return False
 
-    def _is_teammate_near(self, loc):
-        """Returns True if a specific piece around the border has a similar piece next to it"""
+    def _is_piece_near(self, loc, piece_type):
+        """Returns True if a location around the border has a similar piece next to it"""
 
         locPost = self._get_next_position_clockwise(loc)
         locPrior = self._get_next_position_clockwise(loc, clockwise=False)
 
-        piece = self.game.state[loc-1]
+        #loc_piece = self.game.state[loc-1]
 
-        if(piece == '-'):
-            print("[!] something is wrong, you're looking at an empty space")
-            return False
-        if(piece == self.game.state[locPost-1] or piece == self.game.state[locPrior-1]):
+        if(piece_type == self.game.state[locPost-1] or piece_type == self.game.state[locPrior-1]):
             return True
 
         return False

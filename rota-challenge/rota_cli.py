@@ -12,6 +12,7 @@ def forced(email, verbose=False, numTries= 1, dump=False):
     move_counts=[]
 
     for x in range(0,numTries):
+        print(f"\n################| Session {x+1} |################\n")
         game = Rota(email, verbose)
         player = Player(game, verbose)  # give the player a game to play
         player.play()
@@ -136,8 +137,8 @@ if __name__ == "__main__":
     if(args.force):
         if(args.verbose):
             print("Attempting win by stalling a Rota opponent to submission 50 times in a row...")
-        forced(args.email, args.verbose,numTries=30,dump=True)
-
+        #forced(args.email, args.verbose,numTries=50,dump=True)
+        forced(args.email, args.verbose)
     else:
         if(args.verbose):
             print("Starting game in interactive mode...")
