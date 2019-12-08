@@ -7,6 +7,7 @@ def forced(email, verbose=False):
     game = Rota(email, verbose)
     player = Player(game, verbose)  # give the player a game to play
     player.play()
+    pprint(player.dump_game_stats())
 
 
 def interactive(email, verbose=False):

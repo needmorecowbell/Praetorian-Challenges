@@ -103,7 +103,9 @@ Player Wins:    {self.player_wins}
         """Make place requests to the api accessible from the board class"""
 
         try:
-            return self.api.place(loc)
+            results= self.api.place(loc)
+            self.refresh_stats()
+            return results
         except Exception as e:
             print(e)
 
@@ -111,6 +113,8 @@ Player Wins:    {self.player_wins}
         """Make move requests to the api accessible from the board class"""
 
         try:
-            return self.api.move(piece, loc)
+            results= self.api.move(piece, loc)
+            self.refresh_stats()
+            return results
         except Exception as e:
             print(e)
