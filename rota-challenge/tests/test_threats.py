@@ -20,9 +20,9 @@ def test_is_threat_on_border_placement_mode(player):
         results = player._find_threats_on_border(state)
         assert expectation == results
     
-def test_is_threat_on_border(player):
-    """Tests for border threats where all the pieces are on the board"""
-    states= [("cc--pcp-p",[3]),("cc-p--pcp",[])]
-    for state, expectation in states:
-        results = player._find_threats_on_border(state)
-        assert expectation == results
+# def test_is_threat_on_border(player):
+#     """Tests for border threats where all the pieces are on the board"""
+#     states= [("cc--pcp-p",[3]),("cc-p--pcp",[])]
+#     for state, expectation in states:
+#         results = player._find_threats_on_border(state)
+#         assert expectation == results
