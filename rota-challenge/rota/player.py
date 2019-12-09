@@ -1,5 +1,5 @@
 import datetime
-
+import time
 
 class Player(object):
     """The Player Object mimics the actions of a user who is intentionally trying to stall"""
@@ -29,7 +29,7 @@ class Player(object):
         for i in range(2):  # reactively handle the next two placements
 
             # Find game ending threat locations
-            threat_locations = self._find_game_ending_threats(self.game.state)
+            threat_locations = self._find_game_ending_threats(self.game.state, placement_mode=True)
             # There will only ever been one possible threat location this early
             # in the game because of our opening strategy
 
@@ -117,7 +117,7 @@ class Player(object):
             if(self.verbose):
                 print(self.game.display_board_minimal())
 
-    def _find_game_ending_threats(self,state):
+    def _find_game_ending_threats(self,state, placement_mode=False):
         print("[Player] Finding threats...")
 
         threats = []
@@ -129,7 +129,7 @@ class Player(object):
                 #       - - p
                 #       c - c
                 #       - - -
-                print("There is a threat in the center of the board...")
+                print("[Threat] There is a threat in the center of the board...")
                 threats.append(5)  # threat in center
 
             # if the center is open, there is a chance the border is at risk
@@ -141,7 +141,7 @@ class Player(object):
             if(len(threats_on_border) > 0):
                 # There is a chance for 2 threats to come out of this function
                 threats.extend(threats_on_border)
-                print("There is a threat on the edge of the board")
+                print("[Threat] There is a threat on the edge of the board")
 
         elif(state[4] == 'c'):
             threat_using_center = self._find_threat_using_center(state)
@@ -151,12 +151,17 @@ class Player(object):
                 #       - - p
                 #       - c c
                 #       - - -
-                print("There is a threat on the edge of the board, using the center")
+                print("[Threat] There is a threat on the edge of the board, using the center")
 
         return threats
 
     def _is_threat_in_center(self,state):
         """Checks for threat occurring in the center of the board"""
+        
+        # we already know that the center is empty
+        # Because all pieces can move to this spot, there is no need for a placement mode, it's handled
+        # the same.
+
         for loc1, loc2 in self.opposites:
             if(state[loc1-1] == 'c' and state[loc2-1] == 'c'):
                 return True
@@ -187,11 +192,26 @@ class Player(object):
         # if that edge's opposite is empty if it is, the opposite spot is a threat
         for loc1, loc2 in self.opposites:
             if(state[loc1-1] == 'c' and state[loc2-1] == '-'):
-                print("\t[!] Threat using center found at: ", loc2)
-                return loc2
+                if(self._get_num_pieces_on_board("c") <3):
+                    print("\t[!] Threat using center found at: ", loc2)
+                    return loc2
+
+                else:
+                    # We need to check that the threat actually can be moved to by another piece
+                    for cloc in self._get_computer_locations():
+                        if(cloc not in [loc1, 5]):
+                            if(loc2 in self._find_available_spaces(cloc)):
+                                return loc2 # There is an opponent that can move
+
             if(state[loc1-1] == '-' and state[loc2-1] == 'c'):
-                print("\t[!] Threat using center found at: ", loc1)
-                return loc1
+                if(self._get_num_pieces_on_board("c") <3):
+                    print("\t[!] Threat using center found at: ", loc1)
+                    return loc1
+                else:
+                    for cloc in self._get_computer_locations():
+                        if(cloc not in [loc2,5]):
+                            if(loc1 in self._find_available_spaces(cloc)):
+                                return loc1
 
         return None
 
@@ -215,16 +235,30 @@ class Player(object):
             # print(group)
 
             # can't win when if there's a player piece in the set.
-            if('p' not in group and group.count('c') == 2):
-                print("\t[!] Threat on border")
+            if('p' not in group and group.count('c') == 2):                    
                 loc = group.find('-')
 
+                threat=None
+
                 if(loc == 0):
-                    threats.append(loc1)
+                    threat=loc1    
                 elif(loc == 1):
-                    threats.append(loc2)
+                    threat=loc2
                 elif(loc == 2):
-                    threats.append(loc3)
+                    threat=loc3
+
+                if(threat is not None):
+                    if(self._get_num_pieces_on_board("c") <3):
+                        print("\t[!] Threat on border")
+                        threats.append(threat) #this is definitely a threat if there is only 2 pieces on the board
+                    else:
+                        for cloc in self._get_computer_locations():
+                            if(cloc not in [loc1,loc2,loc3]):
+                                if(threat in self._find_available_spaces(cloc)):
+                                    print("\t[!] Threat on border")
+
+                                    threats.append(threat)
+
 
         return threats
 
@@ -251,6 +285,9 @@ class Player(object):
                 return self.clockwise_list[7]
             else:
                 return self.clockwise_list[index-1]
+
+    def _get_num_pieces_on_board(self, team):
+        return self.game.state.count(team)
 
     def _is_board_empty(self):
         """Determines if board is empty"""
@@ -293,7 +330,8 @@ class Player(object):
             elif(self.game.state[4] == 'p'):
                 print("[Player] piece is in center, attempting to move away")
                 available_locs = self._find_available_spaces(5) #find all available locations for a piece in the center
-
+                print("Available spaces: ",available_locs)
+                center_moved= False
                 for loc in available_locs:
                     if(not self._is_piece_near(loc,'p')): #If spot is not near another player piece.
                         future_state = self._mock_move(self.game.state, 5, loc)
@@ -302,11 +340,36 @@ class Player(object):
 
                         if(len(future_threats)==0):
                             results= self._move(5, loc)
+                            centerMoved= True
                             print('\t[+] Moved player from center to: ',loc)
 
                             if(self.verbose):
                                 print(self.game.display_board_minimal())
                             break # we made our move, break out
+                
+                if(not center_moved): # If we can't move the center because of threats, move a border piece
+                    player_moved=False
+                    for player_loc in self._get_player_locations():
+
+                        available_spaces = self._find_available_spaces(player_loc)
+
+                        for aloc in available_spaces:
+                            future_state = self._mock_move(self.game.state, player_loc, aloc)
+                            future_threats = self._find_game_ending_threats(future_state)
+
+                            if(len(future_threats) == 0): # this move won't cause us to lose
+                                self._move(player_loc, aloc)
+                                player_moved = True
+                                print(f'\t[+] Moved player [{player_loc}] to: {aloc}')
+
+                                if(self.verbose):
+                                    print(self.game.display_board_minimal())
+
+                                break # we made our move, break out
+
+                        if(player_moved):
+                            break # player has moved, exit          
+
             else:
                 print("[Player] No threats and piece is not in the center")
                 break
