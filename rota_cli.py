@@ -137,8 +137,8 @@ if __name__ == "__main__":
     if(args.force):
         if(args.verbose):
             print("Attempting win by stalling a Rota opponent to submission 50 times in a row...")
-        forced(args.email, args.verbose,numTries=20,dump=True)
-        #forced(args.email, args.verbose)
+        #forced(args.email, args.verbose,numTries=20,dump=True)
+        forced(args.email, args.verbose)
     else:
         if(args.verbose):
             print("Starting game in interactive mode...")
