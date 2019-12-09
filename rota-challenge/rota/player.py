@@ -24,12 +24,12 @@ class Player(object):
         """Get the pieces on the board, correctly set up."""
         if(self.verbose):
             print(self.game.display_board_minimal())
+        
         self._opening_move()  # put your first piece on the board
 
         for i in range(2):  # reactively handle the next two placements
-
             # Find game ending threat locations
-            threat_locations = self._find_game_ending_threats(self.game.state, placement_mode=True)
+            threat_locations = self._find_game_ending_threats(self.game.state)
             # There will only ever been one possible threat location this early
             # in the game because of our opening strategy
 
@@ -56,7 +56,7 @@ class Player(object):
 
                     if(loc!=5):
                         opp_loc= self._get_opposite_position(loc)
-                        if(self._is_empty(opp_loc) and not self._is_piece_near(loc, piece_type='p')): 
+                        if(self._is_empty(self.game.state,opp_loc) and not self._is_piece_near(loc, piece_type='p')): 
                             # location is empty and not near a teammate
                             print("[Player] Placing piece opposite of opponent in loc: ", loc)
                             results= self._place(opp_loc)
@@ -69,7 +69,7 @@ class Player(object):
                 
                 if(not piece_placed): # if all opposite places are taken or near a teammate...
                     for loc in self.clockwise_list:
-                        if(self._is_empty(loc) and not self._is_piece_near(loc,piece_type='p')):
+                        if(self._is_empty(self.game.state,loc) and not self._is_piece_near(loc,piece_type='p')):
                             print("[Player] No opposite corners found, placing in open area away from teammates...")
                             results = self._place(loc)
 
@@ -77,7 +77,6 @@ class Player(object):
                                 print(self.game.display_board_minimal())
 
                             break
-
 
     def _get_opposite_position(self, loc):
         """Return none for 5, the opposite location for the rest"""
@@ -90,7 +89,7 @@ class Player(object):
     def _opening_move(self):
         """Place the player's first piece on the board"""
 
-        if(self._is_board_empty()):  # We make the first move
+        if(self._is_board_empty(self.game.state)):  # We make the first move
             if(self.verbose):
                 print("[Player] Placing piece on open board...")
             results = self._place(2)  # Place the piece in the top spot
@@ -117,7 +116,7 @@ class Player(object):
             if(self.verbose):
                 print(self.game.display_board_minimal())
 
-    def _find_game_ending_threats(self,state, placement_mode=False):
+    def _find_game_ending_threats(self,state):
         print("[Player] Finding threats...")
 
         threats = []
@@ -180,9 +179,9 @@ class Player(object):
 
         return False
 
-    def _is_empty(self, loc):
+    def _is_empty(self,state, loc):
         """Returns True if spot on board is empty"""
-        return self.game.state[loc-1] == '-'
+        return state[loc-1] == '-'
 
     def _find_threat_using_center(self, state):
         """Checks for threat that uses the center piece"""
@@ -192,7 +191,7 @@ class Player(object):
         # if that edge's opposite is empty if it is, the opposite spot is a threat
         for loc1, loc2 in self.opposites:
             if(state[loc1-1] == 'c' and state[loc2-1] == '-'):
-                if(self._get_num_pieces_on_board("c") <3):
+                if(self._get_num_pieces_on_board(self.game.state,"c") <3):
                     print("\t[!] Threat using center found at: ", loc2)
                     return loc2
 
@@ -204,7 +203,7 @@ class Player(object):
                                 return loc2 # There is an opponent that can move
 
             if(state[loc1-1] == '-' and state[loc2-1] == 'c'):
-                if(self._get_num_pieces_on_board("c") <3):
+                if(self._get_num_pieces_on_board(self.game.state,"c") <3):
                     print("\t[!] Threat using center found at: ", loc1)
                     return loc1
                 else:
@@ -248,7 +247,7 @@ class Player(object):
                     threat=loc3
 
                 if(threat is not None):
-                    if(self._get_num_pieces_on_board("c") <3):
+                    if(self._get_num_pieces_on_board(self.game.state,"c") <3):
                         print("\t[!] Threat on border")
                         threats.append(threat) #this is definitely a threat if there is only 2 pieces on the board
                     else:
@@ -260,7 +259,7 @@ class Player(object):
                                     threats.append(threat)
 
 
-        return threats
+        return list(set(threats))
 
     def _get_player_locations(self):
         """Returns locations of all pieces owned by the player"""
@@ -286,12 +285,12 @@ class Player(object):
             else:
                 return self.clockwise_list[index-1]
 
-    def _get_num_pieces_on_board(self, team):
-        return self.game.state.count(team)
+    def _get_num_pieces_on_board(self, state,team):
+        return state.count(team)
 
-    def _is_board_empty(self):
+    def _is_board_empty(self,state):
         """Determines if board is empty"""
-        return self.game.state == "---------"
+        return state == "---------"
 
     def _stall_game(self):
         """After all pieces are on the board, stall the game for 30 moves"""
@@ -398,7 +397,7 @@ class Player(object):
                 available.append(4)
         else:
             for loc in self.clockwise_list:
-                if(self._is_empty(loc)):
+                if(self._is_empty(self.game.state,loc)):
                     available.append(loc)
 
         return available
