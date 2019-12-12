@@ -139,9 +139,9 @@ class Player(object):
                 print("[Threat] There is a threat on the edge of the board")
 
         elif(state[4] == 'c'):
-            threat_using_center = self._find_threat_using_center(state)
+            threat_using_center = self._find_threats_using_center(state)
             if(threat_using_center):
-                threats.append(threat_using_center)
+                threats.extend(threat_using_center)
                 # IE:
                 #       - - p
                 #       - c c
@@ -176,38 +176,38 @@ class Player(object):
         return False
 
 
-    def _find_threat_using_center(self, state):
+    def _find_threats_using_center(self, state):
         """Checks for threat that uses the center piece"""
 
         # We already know that there is a piece in the center.
         # We need to check if there is another opponent piece on the edge, and
         # if that edge's opposite is empty if it is, the opposite spot is a threat
-
-
+        
+        threats=[]
         for loc1, loc2 in self.opposites:
             if(state[loc1-1] == 'c' and state[loc2-1] == '-'):
                 if(self._get_num_pieces_on_board(self.game.state,"c") <3):
                     print("\t[!] Threat using center found at: ", loc2)
-                    return loc2
+                    threats.append(loc2)
 
                 else:
                     # We need to check that the threat actually can be moved to by another piece
                     for cloc in self._get_computer_locations(self.game.state):
                         if(cloc not in [loc1, 5]):
                             if(loc2 in self._find_available_spaces(self.game.state,cloc)):
-                                return loc2 # There is an opponent that can move
+                                threats.append(loc2) # There is an opponent that can move
 
             if(state[loc1-1] == '-' and state[loc2-1] == 'c'):
                 if(self._get_num_pieces_on_board(self.game.state,"c") <3):
                     print("\t[!] Threat using center found at: ", loc1)
-                    return loc1
+                    threats.append(loc1)
                 else:
                     for cloc in self._get_computer_locations(self.game.state):
                         if(cloc not in [loc2,5]):
-                            if(loc1 in self._find_available_spaces(cloc)):
-                                return loc1
+                            if(loc1 in self._find_available_spaces(self.game.state,cloc)):
+                                threats.append(loc1)
 
-        return None
+        return threats
 
     def _find_threats_on_border(self, state):
         """Checks for threats that do not use the center, only on the border"""

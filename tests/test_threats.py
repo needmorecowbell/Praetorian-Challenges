@@ -12,6 +12,12 @@ def test_is_threat_in_center(player):
         results = player._is_threat_in_center(state)
         assert results == True
 
+def test_find_threats_using_center(player):
+    states= [("c--pcppc-",[2,9]),("c-ppc--cp",[2])]
+    for state, expectation in states:
+        results = player._find_threats_using_center(state)
+        assert expectation == results
+
 def test_is_threat_on_border_placement_mode(player):
     """Tests for border threats where not all the pieces are on the board"""
     states= [("cc-p-cp--",[3]),("cc-p-----",[3])]
@@ -21,7 +27,7 @@ def test_is_threat_on_border_placement_mode(player):
     
 def test_is_threat_on_border(player):
     """Tests for border threats where all the pieces are on the board"""
-    states= [("cc--pcp-p",[3]),("cc-p--pcp",[])]
+    states= [("cc--pcp-p",[3]),("cc-p--pcp",[]),("cp-------",[])]
 
     for state, expectation in states:
         results = player._find_threats_on_border(state)
