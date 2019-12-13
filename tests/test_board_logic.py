@@ -30,6 +30,14 @@ def test_mock_move(player):
     for state, piece, loc, expectation in states:
         assert expectation == player._mock_move(state,piece,loc)
 
+
+def test_mock_place(player):
+    states= [("---------",2,"-p-------") ,
+             ("c----p--p",8,"c----p-pp")]
+    for state, loc, expectation in states:
+        assert expectation == player._mock_place(state,loc)
+
+
 def test_is_in_y_position(player):
     states= [("-pcc-pp-c","p",True),("-pcc-pp-c","c",True),("-pc-c-pcp","p",True),("-pc-c-pcp","c",False)]
     for state, team, expectation in states:

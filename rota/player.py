@@ -28,57 +28,206 @@ class Player(object):
             print(self.game.display_board_minimal())
         
         self._opening_move()  # put your first piece on the board
+        root = self._get_player_locations(self.game.state)[0] # only player on board
+        
+        made_first_move = self._get_num_pieces_on_board(self.game.state, 'c') == 1
 
-        for i in range(2):  # reactively handle the next two placements
-            # Find game ending threat locations
-            threat_locations = self._find_game_ending_threats(self.game.state)
-            # There will only ever been one possible threat location this early
-            # in the game because of our opening strategy
+        expected_cwise = self._get_next_position_clockwise(self._get_opposite_position(root))
+        expected_ccwise = self._get_next_position_clockwise(self._get_opposite_position(root),clockwise=False)
 
-            if(len(threat_locations)> 1):
-                print("[FATAL] We're at the end of the line, jim. I guess this is it.")
-            if(len(threat_locations) > 0):
-                print("[Player] Game ending threat found, mitigating...")
-                self._place(threat_locations[0])
+        #Fill in one of the forks where there is a threat if there is one (assuming player always moves right or left of first piece)
+        if(made_first_move):
+            loc= self._get_computer_locations(self.game.state)[0] # only one opponent on board
+            self._place(self._get_opposite_position(loc)) # move player to the opposite position
+            if(self.verbose):
+                print("Made first move, second piece moving opposite of opponent")
+                print(self.game.display_board_minimal())
+                         
 
+            if(self.game.state[expected_ccwise-1] =='-'):
+                print("Filling in the y ccwise...")
+                threats=self._find_threats_on_border(self.game.state)
+                
+                if(len(threats)>0):
+                    print("attempting alternate y formation")
+                    self._place(threats[0])
+                else:
+                    self._place(expected_ccwise)
                 if(self.verbose):
-                    print(self.game.display_board_minimal())
-                
-                if(self.game.is_game_lost):
-                    self.game_resolution= self.LOST
-                    
+                    print(self.game.display_board_minimal())    
             else:
-                print("\t[+] No immediate threats found")
+                print("Filling in the y cwise...")
+                threats=self._find_threats_on_border(self.game.state)
                 
-                #Place at the opposite end of one of the opponents
-                cp_locs = self._get_computer_locations(self.game.state)
-                piece_placed = False
+                if(len(threats)>0):
+                    print("attempting alternate y formation")
+                    self._place(threats[0])
+                else:
+                    self._place(expected_cwise)
+                if(self.verbose):
+                    print(self.game.display_board_minimal())      
 
-                for loc in cp_locs:
 
-                    if(loc!=5):
-                        opp_loc= self._get_opposite_position(loc)
-                        if(self._is_empty(self.game.state,opp_loc) and not self._is_piece_near(loc, piece_type='p')): 
-                            # location is empty and not near a teammate
-                            print("[Player] Placing piece opposite of opponent in loc: ", loc)
-                            results= self._place(opp_loc)
-                            piece_placed=True
+        else:
+            threats= self._find_game_ending_threats(self.game.state)
 
+            if(len(threats)>0):
+                print("Fixing immediate threat upon placement")
+                self._place(threats[0])
+                if(self.verbose):
+                    print(self.game.display_board_minimal())      
+
+                threats = self._find_game_ending_threats(self.game.state)
+                if(len(threats) > 0):
+                    self._place(threats[0])
+                    if(self.verbose):
+                        print(self.game.display_board_minimal())    
+                else: # otherwise, let's fill out the y formation
+                    if(self.game.state[expected_ccwise-1]=='-'):
+                        self._place(expected_ccwise)
+                        if(self.verbose):
+                            print(self.game.display_board_minimal())      
+
+                    elif(self.game.state[expected_cwise-1]=='-'):
+                        self._place(expected_cwise)
+                        if(self.verbose):
+                            print(self.game.display_board_minimal())      
+
+                    else:
+                        threats = self._find_game_ending_threats(self.game.state)
+                        if(len(threats) > 0):
+                            self._place(threats[0])
                             if(self.verbose):
-                                print(self.game.display_board_minimal())
+                                print(self.game.display_board_minimal()) 
+                        else: 
+                            a_locs= self._get_all_open_spaces(self.game.state)
+                            for loc in a_locs:
+                                state= self._mock_place(self.game.state, loc)
+                                if(self._is_in_y_position(state, "p")):
+                                    print(f"Placing at {loc} to fill out the Y shape.")
+                                    self._place(loc)
+                                    if(self.verbose):
+                                        print(self.game.display_board_minimal()) 
 
-                            break # if we place an item, restart the logic to detect for new threats
+
+
+            else: # no threats found
                 
-                if(not piece_placed): # if all opposite places are taken or near a teammate...
-                    for loc in self.clockwise_list:
-                        if(self._is_empty(self.game.state,loc) and not self._is_piece_near(loc,piece_type='p')):
-                            print("[Player] No opposite corners found, placing in open area away from teammates...")
-                            results = self._place(loc)
+                if(self.game.state[expected_ccwise-1] =="-"):
+                    print("No threat, moving ccwise")
+                    self._place(expected_ccwise)
+                    if(self.verbose):
+                        print(self.game.display_board_minimal())      
 
-                            if(self.verbose):
-                                print(self.game.display_board_minimal())
+                elif(self.game.state[expected_cwise-1]=="-"):
+                    print("No threat, moving cwise")
+                    self._place(expected_cwise)
+                    if(self.verbose):
+                        print(self.game.display_board_minimal())     
 
-                            break
+                else:
+                    print("both slots are filled, don't know what to do") 
+                    exit()
+
+                # Work on third piece
+
+                threats = self._find_game_ending_threats(self.game.state)
+                if(len(threats) > 0):
+                    self._place(threats[0])
+                    if(self.verbose):
+                        print(self.game.display_board_minimal())  
+                else:
+                    if(self.game.state[expected_ccwise-1]=='-'):
+                        self._place(expected_ccwise)
+                        if(self.verbose):
+                            print(self.game.display_board_minimal())      
+
+                    elif(self.game.state[expected_cwise-1]=='-'):
+                        self._place(expected_cwise)
+                        if(self.verbose):
+                            print(self.game.display_board_minimal()) 
+                    else:
+                        a_locs= self._get_all_open_spaces(self.game.state)
+                        for loc in a_locs:
+                            state= self._mock_place(self.game.state, loc)
+                            if(self._is_in_y_position(state, "p")):
+                                print(f"Placing at {loc} to fill out the Y shape.")
+                                self._place(loc)
+                                if(self.verbose):
+                                    print(self.game.display_board_minimal()) 
+
+
+
+            
+        if(self.game.state[4]=='p'):
+            print("Not in Y formation, all pieces are placed")
+            a_locs= self._find_available_spaces(self.game.state, 5)
+            for loc in a_locs:
+                state = self._mock_move(self.game.state, 5,loc)
+                if(self._is_in_y_position(state, "p")):
+                    print("Moving center to fill out the Y shape.")
+                    self._move(5,loc)
+                    if(self.verbose):
+                        print(self.game.display_board_minimal()) 
+
+        if(self._is_in_y_position(self.game.state,"p")):
+            print("Success, pieces are in formation for stalling")
+        else:
+            print("[ERROR] Something went wrong")   
+            exit()
+
+            
+
+        # for i in range(2):  # reactively handle the next two placements
+        #     # Find game ending threat locations
+        #     threat_locations = self._find_game_ending_threats(self.game.state)
+        #     # There will only ever been one possible threat location this early
+        #     # in the game because of our opening strategy
+
+        #     if(len(threat_locations)> 1):
+        #         print("[FATAL] We're at the end of the line, jim. I guess this is it.")
+        #     if(len(threat_locations) > 0):
+        #         print("[Player] Game ending threat found, mitigating...")
+        #         self._place(threat_locations[0])
+
+        #         if(self.verbose):
+        #             print(self.game.display_board_minimal())
+                
+        #         if(self.game.is_game_lost):
+        #             self.game_resolution= self.LOST
+                    
+        #     else:
+        #         print("\t[+] No immediate threats found")
+                
+        #         #Place at the opposite end of one of the opponents
+        #         cp_locs = self._get_computer_locations(self.game.state)
+        #         piece_placed = False
+
+        #         for loc in cp_locs:
+
+        #             if(loc!=5):
+        #                 opp_loc= self._get_opposite_position(loc)
+        #                 if(self._is_empty(self.game.state,opp_loc) and not self._is_piece_near(loc, piece_type='p')): 
+        #                     # location is empty and not near a teammate
+        #                     print("[Player] Placing piece opposite of opponent in loc: ", loc)
+        #                     results= self._place(opp_loc)
+        #                     piece_placed=True
+
+        #                     if(self.verbose):
+        #                         print(self.game.display_board_minimal())
+
+        #                     break # if we place an item, restart the logic to detect for new threats
+                
+        #         if(not piece_placed): # if all opposite places are taken or near a teammate...
+        #             for loc in self.clockwise_list:
+        #                 if(self._is_empty(self.game.state,loc) and not self._is_piece_near(loc,piece_type='p')):
+        #                     print("[Player] No opposite corners found, placing in open area away from teammates...")
+        #                     results = self._place(loc)
+
+        #                     if(self.verbose):
+        #                         print(self.game.display_board_minimal())
+
+        #                     break
 
 
     def _opening_move(self):
@@ -396,6 +545,11 @@ class Player(object):
         future_state = future_state[0:loc-1]+'p'+future_state[loc:]
         return future_state
 
+    def _mock_place(self, state, loc):
+        """ Returns a game state of a placement without sending it to the server"""
+        future_state = state[0:loc-1]+'p'+state[loc:]
+        return future_state
+
     def _find_available_spaces(self, state, piece):
         """Finds the available spaces for a piece"""
         available = []
@@ -423,6 +577,7 @@ class Player(object):
         """Place piece and record history"""
         results = self.game.place(loc)
         self.game.refresh_stats()
+        print(results["data"])
         self.move_history.append(results["data"]["board"])
         if(self.game.is_game_lost):
             self.game_resolution= self.LOST
@@ -442,6 +597,11 @@ class Player(object):
     def _get_computer_locations(self,state):
         """Returns locations of all pieces owned by the computer"""
         return [i+1 for i, letter in enumerate(state) if letter == "c"]
+
+    def _get_all_open_spaces(self,state):
+        """Returns locations of all pieces owned by the computer"""
+        return [i+1 for i, letter in enumerate(state) if letter == "-"]
+
 
     def _get_next_position_clockwise(self, loc, clockwise=True):
         """Get's the position clockwise to a point of the outer ring"""
