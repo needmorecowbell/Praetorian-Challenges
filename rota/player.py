@@ -13,6 +13,7 @@ class Player(object):
     game_resolution = None
 
     clockwise_list = [2, 3, 6, 9, 8, 7, 4, 1]
+   
     # spots opposite to each other
     opposites = [(2, 8), (3, 7), (6, 4), (9, 1)]
 
@@ -111,7 +112,17 @@ class Player(object):
             if(self.verbose):
                 print(self.game.display_board_minimal())
 
+    def _is_in_y_position(self,state,team):
+        """Determines if player or opponent are in the y position on the board"""
 
+        for loc in self.clockwise_list:
+            expected_cwise = self._get_next_position_clockwise(self._get_opposite_position(loc))
+            expected_ccwise = self._get_next_position_clockwise(self._get_opposite_position(loc),clockwise=False)
+            if(state[expected_ccwise-1] == team and state[loc-1] == team and state[expected_cwise-1] == team):
+                #If all are team members, it must be a y formation
+                return True
+        return False
+        
     def _find_game_ending_threats(self,state):
         print("[Player] Finding threats...")
 
@@ -488,4 +499,4 @@ class Player(object):
         # Placement Stage
         self._handle_placement()
         # Stalling Stage
-        self._stall_game()
+        #self._stall_game()
