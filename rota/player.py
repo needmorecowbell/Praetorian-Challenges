@@ -488,7 +488,7 @@ class Player(object):
         return available
 
 
- def _is_in_y_position(self,state,team):
+    def _is_in_y_position(self,state,team):
         """Determines if player or opponent are in the y position on the board"""
 
         for loc in self.clockwise_list:
