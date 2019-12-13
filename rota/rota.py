@@ -1,7 +1,7 @@
 from .api import RotaAPI
 
 from pprint import pprint
-
+import time
 
 class Rota(object):
     api = None
@@ -59,9 +59,10 @@ class Rota(object):
                 "moves":self.moves,
                 "games_won":self.games_won}
 
-    def display_board_minimal(self, state=state):
+    def display_board_minimal(self, state=None):
         """Displays the rota board as a 3x3 grid, with stats at the bottom."""
-
+        if(state is None):
+            state= self.state
         s = state
         return f'''
         {s[0]}{s[1]}{s[2]}
@@ -73,9 +74,11 @@ Moves:          {self.moves}
 Player Wins:    {self.player_wins}  
         '''
 
-    def display_board(self, state=state):
+    def display_board(self, state=None):
         """Displays the rota board in ascii art, with the stats at the bottom."""
-
+        
+        if(state is None):
+            state= self.state
         s = state
         return f'''
                    *** ### ### ***
@@ -128,19 +131,31 @@ Player Wins:    {self.player_wins}
 
 
 
-    def mock_move(self, piece, loc, state=self.state):
+    def mock_move(self, piece, loc, state=None):
         """Returns a game state of a move without sending it to the server"""
+
+        if(state is None):
+            state= self.state
+
         future_state = state[0:piece-1]+'-'+state[piece:] # sub out piece to empty space
         future_state = future_state[0:loc-1]+'p'+future_state[loc:]
         return future_state
 
-    def mock_place(self, loc, state=self.state):
+    def mock_place(self, loc, state=None):
         """ Returns a game state of a placement without sending it to the server"""
+
+        if(state is None):
+            state= self.state
+
         future_state = state[0:loc-1]+'p'+state[loc:]
         return future_state
 
-    def find_available_spaces(self, piece, state=self.state):
+    def find_available_spaces(self, piece, state=None):
         """Finds the available spaces for a piece"""
+
+        if(state is None):
+            state= self.state
+
         available = []
 
         if(piece !=5):
@@ -157,14 +172,17 @@ Player Wins:    {self.player_wins}
                 available.append(5)
         else:
             for loc in self.clockwise_list:
-                if(self.is_empty(state,loc)):
+                if(self.is_empty(loc)):
                     available.append(loc)
 
         return available
 
 
-    def is_in_y_position(self,team, state=self.state):
+    def is_in_y_position(self,team, state=None):
         """Determines if player or opponent are in the y position on the board"""
+
+        if(state is None):
+            state= self.state
 
         for loc in self.clockwise_list:
             expected_cwise = self.get_next_position_clockwise(self.get_opposite_position(loc))
@@ -174,9 +192,10 @@ Player Wins:    {self.player_wins}
                 return True
         return False
         
-    def find_game_ending_threats(self, state=self.state):
+    def find_game_ending_threats(self, state=None):
         print("[Player] Finding threats...")
-
+        if(state is None):
+            state= self.state
         threats = []
 
         # The middle is open, check if there is risk of losing if it is taken
@@ -210,12 +229,15 @@ Player Wins:    {self.player_wins}
                 #       - - -
 
                 print("[Threat] There is a threat on the edge of the board, using the center")
-
+                print("STATE: ",state)
+                print("Threats: ", threats)
         return threats
 
-    def is_threat_in_center(self,state=self.state):
+    def is_threat_in_center(self,state=None):
         """Checks for threat occurring in the center of the board"""
         
+        if(state is None):
+            state= self.state
         # we already know that the center is empty
         # Because all pieces can move to this spot, there is no need for a placement mode, it's handled
         # the same.
@@ -234,9 +256,11 @@ Player Wins:    {self.player_wins}
 
         return False
 
-    def find_threats_using_center(self, state=self.state):
+    def find_threats_using_center(self, state=None):
         """Checks for threat that uses the center piece"""
-
+        time.sleep(.5)
+        if(state is None):
+            state= self.state
         # We already know that there is a piece in the center.
         # We need to check if there is another opponent piece on the edge, and
         # if that edge's opposite is empty if it is, the opposite spot is a threat
@@ -267,9 +291,11 @@ Player Wins:    {self.player_wins}
 
         return threats
 
-    def find_threats_on_border(self, state=self.state):
+    def find_threats_on_border(self, state=None):
         """Checks for threats that do not use the center, only on the border"""
 
+        if(state is None):
+            state= self.state
         # We already know that there is not an opponent piece in the center
         # We need to check along the border for pairs of opponents.
         # if there is an empty space to the left and/or the right, record it
@@ -323,16 +349,27 @@ Player Wins:    {self.player_wins}
         return list(set(threats))
 
 
-    def get_player_locations(self,state=self.state):
+    def get_player_locations(self,state=None):
         """Returns locations of all pieces owned by the player"""
+
+        if(state is None):
+            state= self.state
+
         return [i+1 for i, letter in enumerate(state) if letter == "p"]
 
-    def get_computer_locations(self,state=self.state):
+    def get_computer_locations(self,state=None):
         """Returns locations of all pieces owned by the computer"""
+
+        if(state is None):
+            state= self.state
+
         return [i+1 for i, letter in enumerate(state) if letter == "c"]
 
-    def get_all_open_spaces(self,state=self.state):
+    def get_all_open_spaces(self,state=None):
         """Returns locations of all pieces owned by the computer"""
+    
+        if(state is None):
+            state= self.state
         return [i+1 for i, letter in enumerate(state) if letter == "-"]
 
 
@@ -356,15 +393,21 @@ Player Wins:    {self.player_wins}
             else:
                 return self.clockwise_list[index-1]
 
-    def get_num_pieces_on_board(self, team, state=self.state):
+    def get_num_pieces_on_board(self, team, state=None):
+        if(state is None):
+            state= self.state
         return state.count(team)
 
-    def is_board_empty(self,state=self.state):
+    def is_board_empty(self,state=None):
         """Determines if board is empty"""
+        if(state is None):
+            state= self.state
         return state == "---------"
   
-    def is_empty(self,loc, state=self.state):
+    def is_empty(self,loc, state=None):
         """Returns True if spot on board is empty"""
+        if(state is None):
+            state= self.state
         return state[loc-1] == '-'
 
     def get_opposite_position(self, loc):

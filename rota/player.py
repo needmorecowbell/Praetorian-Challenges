@@ -154,7 +154,7 @@ class Player(object):
             print("Not in Y formation, all pieces are placed")
             a_locs= self.game.find_available_spaces(5)
             for loc in a_locs:
-                future_state = self.game.mock_move(5,loc, state=future_state)
+                future_state = self.game.mock_move(5,loc)
                 if(self.game.is_in_y_position( "p")):
                     print("Moving center to fill out the Y shape.")
                     self._move(5,loc)
@@ -228,8 +228,8 @@ class Player(object):
                             break # We made our double shift, break out to check for threat again
             
             elif(self.game.state[4]=="c"): # if piece is in center
-                while(self.game.is_active and self.game.state[4]=='c'):
-                    
+                while(self.game.is_active and self.game.state[4]=='c'):  
+
                     for piece in self.game.get_player_locations():
                         cwise_loc= self.game.get_next_position_clockwise(piece)
                         ccwise_loc= self.game.get_next_position_clockwise(piece, clockwise=False)
@@ -256,9 +256,13 @@ class Player(object):
                                                 print("Moved piece back to old position")
                                                 print(self.game.display_board_minimal())  
                                         break
+                            else:
+                                print("No threat cwise")
+                                if(self.verbose):
+                                    print(self.game.display_board_minimal())
 
                         elif(ccwise_loc in a_locs):
-                            future_state= self.game.mock_move(self.game.state, piece, ccwise_loc)
+                            future_state= self.game.mock_move(piece, ccwise_loc)
                             future_threats = self.game.find_game_ending_threats(state=future_state)
 
                             if(len(future_threats) == 0):
@@ -277,7 +281,9 @@ class Player(object):
                                             print("Moved piece back to old position")
                                             print(self.game.display_board_minimal())  
                                     break
-                                                                  
+                        else: # there is a threat:
+                            print("Threat found") 
+                            exit()                                     
 
             elif(self.game.state[4]=='-'):
                 for piece in self.game.get_player_locations():
@@ -309,10 +315,11 @@ class Player(object):
                         elif(ccwise_loc in a_locs):
                             future_state= self.game.mock_move(piece, ccwise_loc)
                             future_threats= self.game.find_game_ending_threats(state=future_state)
+                            
                             if(len(future_threats)==0):
                                 self._move(piece,ccwise_loc)
                                 if(self.verbose):
-                                    print("Moved piece counterclockwise from borderrrr")
+                                    print("Moved piece counterclockwise from border")
                                     print(self.game.display_board_minimal())                            
                                 
                                 if(self.game.state[piece-1]=='-'):
@@ -324,12 +331,11 @@ class Player(object):
                                         if(self.verbose):
                                             print("Moved piece back to old position")
                                             print(self.game.display_board_minimal())  
-                                    break
+                                break
             else:
                 print("Not yet supported")
                 exit()
             
-            time.sleep(.5)
   
 
     def _place(self, loc):
