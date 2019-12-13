@@ -335,8 +335,7 @@ class Player(object):
             else:
                 print("Not yet supported")
                 exit()
-            
-  
+
 
     def _place(self, loc):
         """Place piece and record history"""
