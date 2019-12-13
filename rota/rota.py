@@ -334,14 +334,13 @@ Player Wins:    {self.player_wins}
         # p-p
         
                 if(threat is not None):
-                    print(self.state)
-                    if(self.get_num_pieces_on_board(state,"c") <3):
+                    if(self.get_num_pieces_on_board("c", state=state) <3):
                         print("\t[!] Threat on border")
                         threats.append(threat) #this is definitely a threat if there is only 2 pieces on the board
                     else:
-                        for cloc in self.get_computer_locations(state):
+                        for cloc in self.get_computer_locations(state=state):
                             if(cloc not in [loc1,loc2,loc3]):
-                                if(threat in self.find_available_spaces(state,cloc)):
+                                if(threat in self.find_available_spaces(cloc, state=state)):
                                     print(f"\t[!] Threat on border [{cloc} moves to {threat}]")
                                     threats.append(threat)
 
