@@ -13,7 +13,7 @@ def test_is_threat_in_center(player):
         assert results == True
 
 def test_find_threats_using_center(player):
-    states= [("c--pcppc-",[2,9]),("c-ppc--cp",[2])]
+    states= [("c--pcppc-",[2,9]),("c-ppc--cp",[2]),("p-c-c-pcp",[2])]
     for state, expectation in states:
         results = player._find_threats_using_center(state)
         assert expectation == results

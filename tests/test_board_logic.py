@@ -26,7 +26,8 @@ def test_get_computer_locations(player):
 
 def test_mock_move(player):
     states= [("c-cp-pp-c",6,5,"c-cpp-p-c"),
-             ("c-cp-pp-c",7,8,"c-cp-p-pc") ]
+             ("c-cp-pp-c",7,8,"c-cp-p-pc"),
+             ("-pc-c-pcp",2,1,"p-c-c-pcp") ]
     for state, piece, loc, expectation in states:
         assert expectation == player._mock_move(state,piece,loc)
 
