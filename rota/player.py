@@ -210,9 +210,9 @@ class Player(object):
         # Remove our piece from the middle if it's there
 
         print("[Player] Pieces are placed and in formation, time to stall...")
-        while(self.game.is_active):
+        while(self.game.is_active and self.game.moves <= 30):
             if(self._is_threat_in_center(self.game.state)):
-                while(self.game.is_active and self._is_threat_in_center(self.game.state)):
+                while(self.game.is_active and self._is_threat_in_center(self.game.state) and self.game.moves <= 30):
                     print("Threat is in center, stalling by moving back and forth")
 
                     for piece in self._get_player_locations(self.game.state):
@@ -224,7 +224,6 @@ class Player(object):
                                 print("Moved open piece to center")
                                 print(self.game.display_board_minimal())
                             
-
                             self._move(5,piece)
                             if(self.verbose):
                                 print("Moved piece back from center")
@@ -233,7 +232,64 @@ class Player(object):
                             break # We made our double shift, break out to check for threat again
             
             elif(self.game.state[4]=="c"): # if piece is in center
-                while(self.game.is_active and self.game.state[4]=='c'):
+                
+                threats= self._find_game_ending_threats(self.game.state)
+                if(len(threats)>1):
+                    print("We are cornered, try to fix at least one of the threats")
+                    for piece in self._get_player_locations(self.game.state):
+                        a_locs= self._find_available_spaces(self.game.state, piece)
+                        if(threats[0] in a_locs):
+                            self._move(piece,threats[0])
+                            if(self.verbose):
+                                print(self.game.display_board_minimal())  
+
+                            break      
+                        elif(threats[1] in a_locs):
+                            self._move(piece,threats[1])
+                            if(self.verbose):
+                                print(self.game.display_board_minimal())   
+                            break
+
+                elif(len(threats)> 0):
+                    for piece in self._get_player_locations(self.game.state):
+                        a_locs= self._find_available_spaces(self.game.state, piece)
+                        if(threats[0] in a_locs):
+                            self._move(piece,threats[0])
+                            if(self.verbose):
+                                print("Defending threat using center")
+                                print(self.game.display_board_minimal())
+            
+                else:
+                # while(self.game.is_active and self.game.state[4]=='c' and self.game.moves <= 30):
+                    
+                    threats= self._find_game_ending_threats(self.game.state)
+                    if(len(threats)>1):
+                        print("We are cornered, try to fix at least one of the threats")
+                        
+                        for piece in self._get_player_locations(self.game.state):
+
+                            a_locs= self._find_available_spaces(self.game.state, piece)
+                            if(threats[0] in a_locs):
+                                self._move(piece,threats[0])
+                                if(self.verbose):
+                                    print(self.game.display_board_minimal())       
+                                break                     
+                            elif(threats[1] in a_locs):
+                                self._move(piece,threats[1])
+                                if(self.verbose):
+                                    print(self.game.display_board_minimal())   
+                                break
+
+                    elif(len(threats)> 0):
+                        for piece in self._get_player_locations(self.game.state):
+                            a_locs= self._find_available_spaces(self.game.state, piece)
+                            if(threats[0] in a_locs):
+                                self._move(piece,threats[0])
+                                if(self.verbose):
+                                    print("Defending threat using center")
+                                    print(self.game.display_board_minimal())
+                    
+                    
                     ppieces = self._get_player_locations(self.game.state)
                     for piece in ppieces:
                         cwise_loc= self._get_next_position_clockwise(piece)
@@ -267,20 +323,33 @@ class Player(object):
                                             if(self.verbose):
                                                 print("Moved piece back to old position")
                                                 print(self.game.display_board_minimal())  
-                                        break
+                                            break
 
                         elif(ccwise_loc in a_locs):
                             f_state= self._mock_move(self.game.state, piece, ccwise_loc)
                             f_threats = self._find_game_ending_threats(f_state)
+                            
+
+                            print("##########")
+                            print("\nCurrent State: ", self.game.state)
+                            print(self.game.display_board_minimal())
+                            print("Piece being inspected: ", piece)
+
                             print("Future state: ",f_state)
                             print("Future threats: ", f_threats)
+
+                            print("###########")
 
                             if(len(f_threats) == 0):
                                 self._move(piece,ccwise_loc)
                                 if(self.verbose):
                                     print("Moved piece counterclockwise from border")
-                                    print(self.game.display_board_minimal())                            
-                                
+                                    print(self.game.display_board_minimal())       
+
+                        # cp-   ->  c-p
+                        # pcc       pcc
+                        # -p-       -p-
+
                                 if(self.game.state[piece-1]=='-'):
                                     future_state= self._mock_move(self.game.state, cwise_loc, piece)
                                     future_threats= self._find_game_ending_threats(future_state)
@@ -290,8 +359,9 @@ class Player(object):
                                         if(self.verbose):
                                             print("Moved piece back to old position")
                                             print(self.game.display_board_minimal())  
-                                    break
-                                                                  
+                                break
+                            #lse:
+
 
             elif(self.game.state[4]=='-'):
                 for piece in self._get_player_locations(self.game.state):
@@ -344,114 +414,11 @@ class Player(object):
                 print("Not yet supported")
                 exit()
             
-            time.sleep(.5)
-            # threats= self._find_game_ending_threats(self.game.state) 
-            
-            # if(len(threats)>0): # if there is an immediate threat to take care of...
-                
-            #     print("[Player] Possible threats: ", threats)
-            #     player_moved=False
 
-            #     for player_loc in self._get_player_locations(self.game.state):
-            #         available_spaces= self._find_available_spaces(self.game.state,player_loc)
-
-            #         if(threats[0] in available_spaces): # if our player has the option of defending against the threat
-            #             future_state = self._mock_move(self.game.state, player_loc, threats[0])
-            #             future_threats= self._find_game_ending_threats(future_state)
-            #             print("Future threats: ",future_threats)
-            #             print("Location: ",player_loc)
-
-            #             if(len(future_threats)== 0): # this move won't cause us to lose
-            #                 self._move(player_loc, threats[0])
-            #                 player_moved=True
-            #                 print('\t[+] Moved player from center to: ',player_loc)
-
-            #                 if(self.verbose):
-            #                     print(self.game.display_board_minimal())
-            #                 break # we made our move, break out
-                
-            #     if(not player_moved):
-                    
-            #         print("Couldn't fix the threat")
-            #         time.sleep(2)
-            #         for player_loc in self._get_player_locations(self.game.state):
-            #             available_spaces = self._find_available_spaces(self.game.state,player_loc)
-            #             if(5 in available_spaces and self._is_empty(self.game.state,5)):
-            #                 future_state = self._mock_move(self.game.state, player_loc, 5)
-            #                 future_threats = self._find_game_ending_threats(future_state)
-            #                 print("Future Threat: "+future_threats)
-            #                 print(f"Moving player [{player_loc}] to center")
-            #                 if(len(future_threats) == 0): # this move won't cause us to lose
-            #                     self._move(player_loc, 5)
-            #                     player_moved = True
-            #                     print(f'\t[+] Moved player [{player_loc}] to center')
-
-            #                     if(self.verbose):
-            #                         print(self.game.display_board_minimal())
-
-            #                     break # we made our move, break out
-        
-
-
-            # elif(self.game.state[4] == 'p'):
-            #     print("[Player] piece is in center, attempting to move away")
-            #     available_locs = self._find_available_spaces(self.game.state,5) #find all available locations for a piece in the center
-            #     print("Available spaces: ",available_locs)
-            #     center_moved= False
-            #     for loc in available_locs:
-            #         if(not self._is_piece_near(loc,'p')): #If spot is not near another player piece.
-            #             future_state = self._mock_move(self.game.state, 5, loc)
-            #             future_threats= self._find_game_ending_threats(future_state)
-                        
-
-            #             if(len(future_threats)==0):
-            #                 results= self._move(5, loc)
-            #                 centerMoved= True
-            #                 print('\t[+] Moved player from center to: ',loc)
-
-            #                 if(self.verbose):
-            #                     print(self.game.display_board_minimal())
-            #                 break # we made our move, break out
-                
-            #     if(not center_moved): # If we can't move the center because of threats, move a border piece
-            #         player_moved=False
-            #         for player_loc in self._get_player_locations(self.game.state):
-
-            #             available_spaces = self._find_available_spaces(self.game.state,player_loc)
-
-            #             for aloc in available_spaces:
-            #                 future_state = self._mock_move(self.game.state, player_loc, aloc)
-            #                 future_threats = self._find_game_ending_threats(future_state)
-
-            #                 if(len(future_threats) == 0): # this move won't cause us to lose
-            #                     self._move(player_loc, aloc)
-            #                     player_moved = True
-            #                     print(f'\t[+] Moved player [{player_loc}] to: {aloc}')
-
-            #                     if(self.verbose):
-            #                         print(self.game.display_board_minimal())
-
-            #                     break # we made our move, break out
-
-            #             if(player_moved):
-            #                 break # player has moved, exit          
-
-            # else:
-            #     print("[Player] No threats and piece is not in the center")
-            #     # if no threat is found, then let's make sure our move won't cause one
-            #     for player_loc in self._get_player_locations(self.game.state): 
-            #             available_spaces = self._find_available_spaces(self.game.state,player_loc)
-            #             for aloc in available_spaces:
-            #                 future_state = self._mock_move(self.game.state, player_loc, aloc)
-            #                 future_threats = self._find_game_ending_threats(future_state)
-
-            #                 if(len(future_threats) == 0): # this move won't cause us to lose
-            #                     self._move(player_loc, aloc)
-            #                     print(f'\t[+] Moved player [{player_loc}] to: {aloc}')
-
-            #                     if(self.verbose):
-            #                         print(self.game.display_board_minimal())
-            #                     break
+        if(self.game.moves >=30):
+            print("###########GAME WON###########")
+            self.game.next()
+            self.game.refresh_stats()
 
     def _mock_move(self, state, piece, loc):
         """Returns a game state of a move without sending it to the server"""
@@ -488,7 +455,7 @@ class Player(object):
         return available
 
 
- def _is_in_y_position(self,state,team):
+    def _is_in_y_position(self,state,team):
         """Determines if player or opponent are in the y position on the board"""
 
         for loc in self.clockwise_list:
@@ -501,7 +468,6 @@ class Player(object):
         
     def _find_game_ending_threats(self,state):
         print("[Player] Finding threats...")
-
         threats = []
 
         # The middle is open, check if there is risk of losing if it is taken
@@ -534,6 +500,7 @@ class Player(object):
                 #       - c c
                 #       - - -
                 print("[Threat] There is a threat on the edge of the board, using the center")
+                time.sleep(.5)
 
         return threats
 
@@ -715,6 +682,7 @@ class Player(object):
         if(self.game.is_game_lost):
             self.game_resolution= self.LOST
 
+
     def _move(self, piece, loc):
         """Place piece and record history"""
         results = self.game.move(piece, loc)
@@ -735,7 +703,8 @@ class Player(object):
     def play(self):
         """Emulate the game being played"""
 
+        while(self.game.games_won < 50 and self.game.computer_wins ==0):
         # Placement Stage
-        self._handle_placement()
+            self._handle_placement()
         # Stalling Stage
-        self._stall_game()
+            self._stall_game()

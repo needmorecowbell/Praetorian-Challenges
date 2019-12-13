@@ -120,3 +120,10 @@ Player Wins:    {self.player_wins}
             return results
         except Exception as e:
             print(e)
+    
+    def next(self):
+        try:
+            results = self.api.next()
+            return results
+        except Exception as e:
+            print(e)
