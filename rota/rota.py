@@ -1,7 +1,7 @@
 from .api import RotaAPI
 
 from pprint import pprint
-
+import time
 
 class Rota(object):
     api = None
@@ -18,6 +18,11 @@ class Rota(object):
     verbose = False
 
     hash = ""  # the good stuff
+
+    clockwise_list = [2, 3, 6, 9, 8, 7, 4, 1]
+   
+    # spots opposite to each other
+    opposites = [(2, 8), (3, 7), (6, 4), (9, 1)]
 
     def __init__(self, email, verbose=False):
         self.api = RotaAPI(email)
@@ -54,10 +59,11 @@ class Rota(object):
                 "moves":self.moves,
                 "games_won":self.games_won}
 
-    def display_board_minimal(self):
+    def display_board_minimal(self, state=None):
         """Displays the rota board as a 3x3 grid, with stats at the bottom."""
-
-        s = self.state
+        if(state is None):
+            state= self.state
+        s = state
         return f'''
         {s[0]}{s[1]}{s[2]}
         {s[3]}{s[4]}{s[5]}
@@ -68,10 +74,12 @@ Moves:          {self.moves}
 Player Wins:    {self.player_wins}  
         '''
 
-    def display_board(self):
+    def display_board(self, state=None):
         """Displays the rota board in ascii art, with the stats at the bottom."""
-
-        s = self.state
+        
+        if(state is None):
+            state= self.state
+        s = state
         return f'''
                    *** ### ### ***
                *##        {s[1]}        ##* 
@@ -127,3 +135,4 @@ Player Wins:    {self.player_wins}
             return results
         except Exception as e:
             print(e)
+
